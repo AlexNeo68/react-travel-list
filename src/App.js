@@ -59,20 +59,58 @@ function Item({item, onDeleteItem, onToggleItem}){
   )
 }
 
-function PackingList({items, onDeleteItem, onToggleItem}){
+function PackingList({items, onDeleteItem, onToggleItem, onClearList}){
+  
+  const [sortBy, setSortBy] = useState('input')
+
+  let sortedItems;
+
+  if (sortBy === 'input') sortedItems = items
+
+  if (sortBy === 'description') sortedItems = items.slice().sort((a, b) => a.description.localeCompare(b.description))
+
+  if (sortBy === 'packed') sortedItems = items.slice().sort((a, b) => a.packed - b.packed)
+
   return (
     <div>
-        {items.map(item => (
-          <Item item={item} key={item.id} onDeleteItem={onDeleteItem} onToggleItem={onToggleItem} />
-        ) )}
+        <div>
+          {sortedItems.map(item => (
+            <Item item={item} key={item.id} onDeleteItem={onDeleteItem} onToggleItem={onToggleItem} />
+          ) )}
+        </div>
+        {sortedItems.length?
+        (
+          <>
+            {sortedItems.length > 1 ? (<div>
+              <select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+                <option value="input" key="input">Sort by input</option>
+                <option value="description" key="description">Sort by description</option>
+                <option value="packed" key="packed">Sort by packed</option>
+              </select>
+            </div>):''} 
+            
+            <button onClick={onClearList}>Clear List</button>
+          </>
+        ):""}
+        
     </div>
   )
 }
 
-function Stats(){
+function Stats({items}){
+
+  if(!items.length) return (
+    <p>
+      Now time to start packing bags!
+    </p>
+  )
+
+  const numItems = items.length
+  const packedNumItems = items.filter(item=>item.packed).length
+  const packedPercent = Math.ceil(packedNumItems/numItems*100)
   return (
     <footer>
-      <em>Your have X items on your list, and your already packed X (X%)</em>
+      <em>Your have {numItems} items on your list, and your already packed {packedNumItems} ({packedPercent}%)</em>
     </footer>
   )
 }
@@ -92,12 +130,17 @@ function App() {
     setItems(items => items.map(item => item.id === id ? {...item, packed: !item.packed} : item))
   }
 
+  function handleClearList(){
+    const confirmed = window.confirm('Are you shure that you want to cleart list?')
+    if(confirmed) setItems([])
+  }
+
   return (
     <>
       <Logo />
       <Form onAddItem={handleAddItems} />
-      <PackingList items={items} onDeleteItem={handleDeleteItem} onToggleItem={handleToggleItem} />
-      <Stats />
+      <PackingList items={items} onClearList={handleClearList} onDeleteItem={handleDeleteItem} onToggleItem={handleToggleItem} />
+      <Stats items={items} />
     </>
   );
 }
